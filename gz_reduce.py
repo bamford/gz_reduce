@@ -122,7 +122,7 @@ def read_subjects(infile, stub, survey_id_field):
                 survey_id.append(metadata[survey_id_field])
             else:
                 survey_id.append(None)
-    subjects = Table([np.array(subject_id), np.array(survey_id),
+    subjects = Table([np.array(subject_id), np.array(survey_id, dtype=np.str),
                       np.array(zooniverse_id)],
                      names=('subject_id', 'survey_id', 'zooniverse_id'))
     return subjects
