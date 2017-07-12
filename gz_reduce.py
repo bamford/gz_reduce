@@ -95,7 +95,7 @@ def calculate_fractions(data, questions, answers, remove_counts=True):
             data[fracname] = data[name] / data[totalname]
             if remove_counts:
                 data.remove_column(name)
-            return data
+    return data
 
 
 def read_subjects(infile, stub, survey_id_field):
