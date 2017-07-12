@@ -15,7 +15,7 @@ def parse_tree(stub):
     for l in f:
         ls = l.strip().split(',')
         if len(ls) > 0:
-            lss = ls[0].replace("'", "").split(maxsplit=1)
+            lss = ls[0].replace('"', '').replace("'", "").split(maxsplit=1)
         if len(lss) > 1:
             test = lss[0].startswith
             value = lss[1].lower().replace(' ', '_')
@@ -79,11 +79,11 @@ def collate_classifications(indata, stub, questions, answers):
 def recalculate_odd_total(data):
     """Adjust for skipping the odd question without providing any answer"""
     data = data.copy()
-    data['odd_total'] = data['shape_total'] - data['shape_star_or_artifact']
+    data['odd_total'] = data['features_total'] - data['features_star_or_artifact']
     return data
 
 
-def calculate_fractions(data, questions, answers):
+def calculate_fractions(data, questions, answers, remove_counts=True):
     """Reduce a GZ classification database dump to a table of vote fractions"""
     data = data.copy()
     for qindex in range(len(questions)):
@@ -93,7 +93,9 @@ def calculate_fractions(data, questions, answers):
             totalname = '{}_total'.format(q)
             fracname = '{}_frac'.format(name)
             data[fracname] = data[name] / data[totalname]
-    return data
+            if remove_counts:
+                data.remove_column(name)
+            return data
 
 
 def read_subjects(infile, stub, survey_id_field):
@@ -130,7 +132,8 @@ def read_subjects(infile, stub, survey_id_field):
 
 def reduce_data(date, tree='gama', subjectset='gama09',
                 survey_id_field='provided_image_id',
-                subjectcat='galaxy_zoo_subjects_lee.csv.gz'):
+                subjectcat='galaxy_zoo_subjects_lee.csv.gz',
+                subjectstub=None):
     """Do everything to produce reduced table of ids and vote fractions"""
     questions, answers = parse_tree(tree)
     template = '{}_galaxy_zoo_{}_classifications.csv'
@@ -138,6 +141,8 @@ def reduce_data(date, tree='gama', subjectset='gama09',
     outdata = collate_classifications(indata, tree, questions, answers)
     outdata = recalculate_odd_total(outdata)
     outdata = calculate_fractions(outdata, questions, answers)
-    subjects = read_subjects(subjectcat, tree, survey_id_field)
+    if subjectstub is None:
+        subjectstub = subjectset
+    subjects = read_subjects(subjectcat, subjectstub, survey_id_field)
     outdata = join(outdata, subjects, 'subject_id')
     return outdata
