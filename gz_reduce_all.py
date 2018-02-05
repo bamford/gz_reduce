@@ -36,12 +36,12 @@ survey_id_field='provided_image_id'
 outdata = reduce_data(date, tree, subjectset, survey_id_field)
 outdata.write('galaxy_zoo_{}_{}.fits'.format(subjectset, date), overwrite=True)
 
-#outdata = Table.read('reduced/galaxy_zoo_gama09_2017-07-09.fits')
-outdata['survey_id'] = [int(x) for x in outdata['survey_id']]
-info = Table.read('gama_info.fits')
-info.rename_column('CATAID', 'survey_id')
-outdata = join(outdata, info, keys='survey_id')
-outdata.write('galaxy_zoo_{}_{}_extra.fits'.format(subjectset, date), overwrite=True)
+date='2018-02-04'
+tree='gama'
+subjectset='gama15'
+survey_id_field='provided_image_id'
+outdata = reduce_data(date, tree, subjectset, survey_id_field)
+outdata.write('galaxy_zoo_{}_{}.fits'.format(subjectset, date), overwrite=True)
 
 date='2017-11-26'
 tree='sloan'
