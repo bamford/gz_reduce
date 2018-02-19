@@ -37,17 +37,23 @@ def parse_tree(stub):
     return questions, answers
 
 
-def count_matches(col, test, group, anywhere=True):
-    """Count the matches of `test` in `col` grouped by `group`"""
+def count_matches(col, test, group=None, anywhere=True, weights=1):
+    """Count the matches of `test` in `col` grouped by `group`
+
+       If `group` is `None`, return `True` for matches."""
     if anywhere:
         matches = np.zeros(len(col), np.bool)
         matches[~col.mask] = np.array([test in x.split(';')
                                        for x in col[~col.mask]])
     else:
         matches = col == test
-    matches = Column(matches).group_by(group)
-    count = matches.groups.aggregate(np.sum)
-    return count
+    if group is not None:
+        matches = matches * weights
+        matches = Column(matches).group_by(group)
+        count = matches.groups.aggregate(np.sum)
+        return count
+    else:
+        return matches
 
 
 def collate_classifications(indata, stub, questions, answers):
@@ -55,6 +61,10 @@ def collate_classifications(indata, stub, questions, answers):
     outdata = Table()
     outdata['subject_id'] = np.unique(indata['subject_id'])
     qindex = 0
+    if 'weight' in indata.colnames:
+        weights = indata['weight'].filled(0)
+    else:
+        weights = 1
     for c in indata.columns:
         if c.startswith(stub):
             q = questions[qindex]
@@ -62,7 +72,8 @@ def collate_classifications(indata, stub, questions, answers):
             for aindex, (a, qtype) in enumerate(answers[qindex]):
                 test = '{}-{}'.format(qtype, aindex)
                 count = count_matches(indata[c], test, indata['subject_id'],
-                                      anywhere=(qtype == 'x'))
+                                      anywhere=(qtype == 'x'),
+                                      weights=weights)
                 name = '{}_{}'.format(q, a)
                 outcols[name] = count
                 if aindex == 0:
