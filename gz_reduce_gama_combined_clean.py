@@ -144,19 +144,21 @@ def evaluation_plots(eval):
     plt.tight_layout()
 
 
+label = 'gama_combined_2018-02-25'
+
 tree='gama'
 survey_id_field='provided_image_id'
 
 questions, answers = parse_tree(tree)
 
 template = '{}_galaxy_zoo_{}_classifications.csv'
-indata09 = Table.read(template.format('2017-11-26', 'gama09'), fast_reader=False)
+indata09 = Table.read(template.format('2018-02-25', 'gama09'), fast_reader=False)
 
 template = '{}_galaxy_zoo_{}_classifications.csv'
-indata12 = Table.read(template.format('2017-11-26', 'gama12'), fast_reader=False)
+indata12 = Table.read(template.format('2018-02-25', 'gama12'), fast_reader=False)
 
 template = '{}_galaxy_zoo_{}_classifications.csv'
-indata15 = Table.read(template.format('2018-02-04', 'gama15'), fast_reader=False)
+indata15 = Table.read(template.format('2018-02-25', 'gama15'), fast_reader=False)
 
 indata = vstack((indata09, indata12, indata15))
 del(indata09, indata12, indata15)
@@ -177,11 +179,11 @@ evalshuffle, evalshuffle_user = evaluate_data(indata, outshuffle, tree)
 evalshuffle_user_avg = evalshuffle_user.groups.aggregate(np.nanmean)
 
 evaluation_plots(evaluation_user)
-plt.savefig('{}_evaluation_stage1.pdf'.format('gama_combined'))
+plt.savefig('{}_evaluation_stage1.pdf'.format(label))
 plt.close()
 
 evaluation_plots(evalshuffle_user)
-plt.savefig('{}_evalshuffle_stage1.pdf'.format('gama_combined'))
+plt.savefig('{}_evalshuffle_stage1.pdf'.format(label))
 plt.close()
 
 
@@ -215,11 +217,11 @@ def iterate_weights(stage, indata, outdata, evaluation_user):
     evalshuffle_user_avg = evalshuffle_user.groups.aggregate(np.nanmean)
 
     evaluation_plots(evaluation_user)
-    plt.savefig('{}_evaluation_stage{}.pdf'.format('gama_combined', stage))
+    plt.savefig('{}_evaluation_stage{}.pdf'.format(label, stage))
     plt.close()
 
     evaluation_plots(evalshuffle_user)
-    plt.savefig('{}_evalshuffle_stage{}.pdf'.format('gama_combined', stage))
+    plt.savefig('{}_evalshuffle_stage{}.pdf'.format(label, stage))
     plt.close()
     return (indata, outdata,
             evaluation, evaluation_user, evaluation_user_avg,
@@ -230,4 +232,4 @@ for i in range(4):
      evaluation, evaluation_user, evaluation_user_avg,
      evalshuffle, evalshuffle_user, evalshuffle_user_avg) = iterate_weights(i+2, indata, outdata, evaluation_user)
 
-outdata.write('galaxy_zoo_{}_consistency_clean.fits'.format('gama_combined'), overwrite=True)
+outdata.write('galaxy_zoo_{}_consistency_clean.fits'.format(label), overwrite=True)
