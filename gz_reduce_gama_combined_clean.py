@@ -21,17 +21,21 @@ def evaluate_data(indata, outdata, stub):
             if ('discuss' in q) or ('odd' in q):
                 qindex += 1
                 continue
+            tname = '{}_total'.format(q)
+            total = data[tname]
             consistency = np.zeros(len(data))
             crossentropy = np.zeros(len(data))
             answered = np.zeros(len(data), np.bool)
             for aindex, (a, qtype) in enumerate(answers[qindex]):
+                print(qindex, q, aindex, a)
                 test = '{}-{}'.format(qtype, aindex)
                 match = count_matches(data[c], test,
                                       anywhere=(qtype == 'x'))
+                if qindex == 0 and aindex == 2:
+                    artifact = np.where(match, 1, 0)
+                    ###!!!### continue  # ignore artifact answers
                 answered |= match
                 name = '{}_{}'.format(q, a)
-                tname = '{}_total'.format(q)
-                total = data[tname]
                 fname = '{}_frac'.format(name)
                 p = data[fname]
                 consistencyi = np.where(match, p, 1 - p)
@@ -41,6 +45,8 @@ def evaluate_data(indata, outdata, stub):
                 crossentropyi = -np.where(match, 1, 0) * np.log(p)
                 consistency += consistencyi
                 crossentropy += crossentropyi
+                if qindex == 0 and aindex == 2:
+                    artifact = np.where(match, 1, 0)
             nqanswers = len(answers[qindex])
             consistency /= nqanswers
             agreement = (1 - crossentropy) / np.log(nqanswers)
@@ -60,11 +66,13 @@ def evaluate_data(indata, outdata, stub):
     evaluation['nanswered'] = nanswered
     evaluation['consistency'] /= nanswered
     evaluation['agreement'] /= nanswered
+    evaluation['artifact'] = artifact
     evaluation = evaluation.group_by('user')
     evaluation_user = evaluation.groups.aggregate(ma.mean)
-    #evaluation['count'] = 1
-    user_count = evaluation['user', 'weight'].groups.aggregate(ma.sum)
+    evaluation['count'] = 1
+    user_count = evaluation['user', 'count', 'weight', 'artifact'].groups.aggregate(ma.sum)
     evaluation_user['count'] = user_count['weight']
+    evaluation_user['artifact_fraction'] = user_count['artifact'] / user_count['count']
     evaluation_user.sort('consistency')
     return evaluation, evaluation_user
 
@@ -161,6 +169,7 @@ template = '{}_galaxy_zoo_{}_classifications.csv'
 indata15 = Table.read(template.format('2018-02-25', 'gama15'), fast_reader=False)
 
 indata = vstack((indata09, indata12, indata15))
+
 del(indata09, indata12, indata15)
 
 indata['weight'] = np.ones(len(indata))
@@ -168,6 +177,8 @@ indata['weight'] = np.ones(len(indata))
 outdata = collate_classifications(indata, tree, questions, answers)
 outdata = recalculate_odd_total(outdata)
 outdata = calculate_fractions(outdata, questions, answers)
+
+outdata.write('galaxy_zoo_{}.fits'.format(label), overwrite=True)
 
 evaluation, evaluation_user = evaluate_data(indata, outdata, tree)
 evaluation_user_avg = evaluation_user.groups.aggregate(np.nanmean)
@@ -231,5 +242,7 @@ for i in range(4):
     (indata, outdata,
      evaluation, evaluation_user, evaluation_user_avg,
      evalshuffle, evalshuffle_user, evalshuffle_user_avg) = iterate_weights(i+2, indata, outdata, evaluation_user)
+
+evaluation_user.write('galaxy_zoo_{}_user_weights.fits'.format(label), overwrite=True)
 
 outdata.write('galaxy_zoo_{}_consistency_clean.fits'.format(label), overwrite=True)

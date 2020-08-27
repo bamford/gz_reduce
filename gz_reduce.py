@@ -90,7 +90,10 @@ def collate_classifications(indata, stub, questions, answers):
 def recalculate_odd_total(data):
     """Adjust for skipping the odd question without providing any answer"""
     data = data.copy()
-    data['odd_total'] = data['features_total'] - data['features_star_or_artifact']
+    if 'odd_total' in data.colnames:
+        data['odd_total'] = data['features_total'] - data['features_star_or_artifact']
+    if 'oddtype_total' in data.colnames:
+        data['oddtype_total'] = data['features_total'] - data['features_star_or_artifact']
     return data
 
 
